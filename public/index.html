@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Department Store Dashboard</title>
+  <style>
+    /* --- Global Styles --- */
+    html {
+      box-sizing: border-box;
+    }
+    *, *:before, *:after {
+      box-sizing: inherit;
+    }
+    body {
+      margin: 0; 
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+      background: #f4f7f6; /* Lighter, cleaner background */
+      line-height: 1.6;
+      color: #333;
+    }
+    
+    /* --- Focus Ring Style --- */
+    :focus-visible {
+      outline: 3px solid #0d6efd;
+      outline-offset: 2px;
+      border-radius: 4px; /* Match element's radius */
+    }
+    .navbar:focus-visible, .form-container:focus-visible {
+      outline: none; /* Disable on non-interactive elements */
+    }
+
+
+    /* --- Navbar Styles --- */
+    .navbar {
+      /* New Gradient Header */
+      background: linear-gradient(90deg, #0d6efd 0%, #0056b3 100%);
+      color: white;
+      padding: 20px 25px; /* More padding */
+      display: flex;
+      flex-direction: column; 
+      align-items: center; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .navbar h2 {
+      margin: 0; 
+      margin-bottom: 18px; 
+      font-size: 2.1em;
+      font-weight: 600; /* Bolder */
+      cursor: pointer; 
+    }
+    
+    #tablesMenu {
+      display: flex;
+      flex-wrap: wrap; 
+      justify-content: center;
+      gap: 12px; 
+    }
+
+    .navbar button {
+      background: rgba(255, 255, 255, 0.1); /* Translucent */
+      color: white; 
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 8px 14px; 
+      border-radius: 6px; 
+      cursor: pointer; 
+      font-weight: 500; /* Medium weight */
+      transition: all 0.2s ease;
+    }
+    .navbar button:hover { 
+      background: rgba(255, 255, 255, 0.2); /* Brighter on hover */
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* --- Slider Styles --- */
+    .content { 
+      padding: 30px 0;
+      position: relative;
+      overflow: hidden; 
+      width: 100%;
+    }
+    .slider-wrapper {
+      display: flex;
+      width: 200%; 
+      transition: transform 0.5s ease-in-out;
+    }
+    .dashboard-prompt, .data-view {
+      width: 50%; 
+      padding: 0 30px; 
+      box-sizing: border-box; 
+    }
+    .dashboard-prompt h3 {
+      text-align: center;
+      padding-top: 50px;
+      font-size: 1.5em; 
+      color: #777; 
+      font-weight: 300; 
+    }
+    .content.data-active .slider-wrapper {
+      transform: translateX(-50%); 
+    }
+    
+    /* --- New Data View Card --- */
+    .data-view {
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+      padding: 25px 35px; /* Internal padding */
+      margin: 0 30px; /* External margin */
+      width: calc(50% - 60px); /* Adjust width for margin */
+    }
+
+    #selectedTableTitle {
+      text-align: center;
+      font-size: 1.75em; 
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    /* --- Table Styles --- */
+    table {
+      border-collapse: collapse; width: 100%; margin-top: 20px; background: white;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05); 
+      border-radius: 8px; 
+      overflow: hidden; 
+    }
+    th, td {
+      border: 1px solid #e9ecef; /* Lighter border */
+      padding: 12px 15px; 
+      text-align: left; 
+    }
+    th { 
+      background-color: #f8f9fa; /* Light gray header */
+      color: #343a40; /* Darker text */
+      font-weight: 600;
+      text-align: left;
+      border-bottom: 2px solid #dee2e6; /* Bolder bottom border */
+    }
+    tbody tr:nth-child(even) {
+      background-color: #fcfcfc;
+    }
+    tbody tr:hover {
+      background-color: #f1f7ff; /* Blue-ish tint on hover */
+    }
+
+    /* --- Action Menu Styles --- */
+    .action-menu {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 25px 0 30px 0; 
+    }
+    .action-btn {
+      background: #ffffff; /* White background */
+      color: #495057; /* Dark gray text */
+      border: 1px solid #ced4da; /* Gray border */
+      padding: 10px 20px; /* Adjusted padding */
+      border-radius: 8px; 
+      cursor: pointer;
+      font-weight: 600; /* Bolder */
+      font-size: 0.9em;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: all 0.2s ease;
+    }
+    .action-btn:hover {
+      background: #f8f9fa; /* Light gray on hover */
+      border-color: #adb5bd;
+      transform: translateY(-2px); 
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+    .action-btn.active {
+      background: #0d6efd; 
+      color: white;
+      border-color: #0d6efd;
+      transform: translateY(0);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    /* --- Form Styles --- */
+    .form-container {
+      margin: 30px auto; 
+      background: #fdfdfd; /* Slightly off-white */
+      padding: 30px; 
+      border-radius: 8px; 
+      border: 1px solid #e9ecef; /* Light border */
+      max-width: 450px; 
+    }
+    .form-container h4 {
+      font-size: 1.5em;
+      text-align: center;
+      margin-top: 0;
+      margin-bottom: 25px;
+    }
+    .form-container label {
+      display: block; font-weight: 600; 
+      margin-top: 15px;
+      margin-bottom: 5px;
+    }
+    .form-container input, .form-container select {
+      width: 100%; 
+      padding: 10px; 
+      margin-top: 0;
+      border: 1px solid #ccc; 
+      border-radius: 6px;
+      font-size: 1em; 
+      background: #ffffff; /* Pure white */
+      transition: all 0.2s ease;
+    }
+    .form-container input:focus, .form-container select:focus {
+      background: #fff;
+      border-color: #007bff;
+      /* Using :focus-visible for outline */
+      outline: none;
+    }
+
+    /* --- Color-Coded Action Buttons --- */
+    .action {
+      border: none;
+      padding: 12px 15px;
+      border-radius: 8px; 
+      cursor: pointer; 
+      margin-top: 25px;
+      width: 100%;
+      font-size: 1.1em;
+      font-weight: bold;
+      color: white;
+      transition: all 0.2s ease;
+    }
+    .action:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    /* Insert = Green */
+    .action.action-insert { background: #198754; }
+    .action.action-insert:hover { background: #157347; }
+    
+    /* Update = Blue */
+    .action.action-update { background: #0d6efd; }
+    .action.action-update:hover { background: #0b5ed7; }
+
+    /* Delete = Red */
+    .action.action-delete { background: #dc3545; }
+    .action.action-delete:hover { background: #b02a37; }
+
+    /* --- Responsive Styles --- */
+    @media (max-width: 768px) {
+      .slider-wrapper {
+        width: 200%;
+      }
+      .data-view {
+        width: calc(50% - 40px); /* Adjust for smaller screens */
+        padding: 20px;
+        margin: 0 20px;
+      }
+      .dashboard-prompt {
+        padding: 0 20px;
+      }
+      .action-menu {
+        flex-wrap: wrap; /* Wrap buttons */
+      }
+      .action-btn {
+        flex-grow: 1; /* Allow buttons to grow */
+      }
+      th, td {
+        padding: 8px;
+        font-size: 0.9em;
+      }
+    }
+
+  </style>
+</head>
+<body>
+  <div class="navbar">
+    <h2 id="home-button">🛒 Department Store DB</h2>
+    <div id="tablesMenu"></div>
+  </div>
+
+  <div class="content">
+    <div class="slider-wrapper">
+      <div class="dashboard-prompt">
+        <h3>Select a table to view data</h3>
+      </div>
+      
+      <div class="data-view">
+        <h3 id="selectedTableTitle"></h3> 
+        
+        <div class="action-menu">
+          <button id="btn-view" class="action-btn">View</button>
+          <button id="btn-insert" class="action-btn">Insert</button>
+          <button id="btn-update" class="action-btn">Update</button>
+          <button id="btn-delete" class="action-btn">Delete</button>
+        </div>
+
+        <div id="tableData" class="data-panel"></div>
+        <div id="insertForm" class="form-container data-panel" style="display: none;"></div>
+        <div id="updateForm" class="form-container data-panel" style="display: none;"></div>
+        <div id="deleteForm" class="form-container data-panel" style="display: none;"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+    const dataPanels = document.querySelectorAll('.data-panel');
+    const actionButtons = document.querySelectorAll('.action-btn');
+    let currentTable = null; 
+
+    function showPanel(panelId) {
+      dataPanels.forEach(panel => panel.style.display = 'none');
+      actionButtons.forEach(btn => btn.classList.remove('active'));
+      document.getElementById(panelId).style.display = 'block';
+      const map = {
+        tableData: 'btn-view',
+        insertForm: 'btn-insert',
+        updateForm: 'btn-update',
+        deleteForm: 'btn-delete'
+      };
+      document.getElementById(map[panelId]).classList.add('active');
+    }
+
+    async function loadTables() {
+      try {
+        const res = await fetch("/api/tables");
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+        
+        const tables = await res.json(); // This is now [{name: '...', displayName: '...'}, ...]
+        const menu = document.getElementById("tablesMenu");
+        menu.innerHTML = ''; // Clear old buttons
+        
+        tables.forEach(t => {
+          const btn = document.createElement("button");
+          btn.textContent = t.displayName;      // Shows 'Customer'
+          btn.onclick = () => loadTableData(t.name, t.displayName); // Uses 'customer'
+          menu.appendChild(btn);
+        });
+      } catch (err) {
+        console.error("Failed to load tables:", err);
+        alert("Failed to load tables. Check console for details.");
+      }
+    }
+
+
+    async function loadTableData(table, displayName) {
+      document.querySelector('.content').classList.add('data-active');
+      document.getElementById("selectedTableTitle").textContent = `${displayName} Table`;
+      currentTable = table; 
+      
+      const res = await fetch(`/api/data/${table}`);
+      const data = await res.json();
+      const container = document.getElementById("tableData");
+
+      if (!data.length) {
+        container.innerHTML = "<p style='text-align:center;'>No records found.</p>";
+      } else {
+        let tableHtml = "<table><thead><tr>"; 
+        Object.keys(data[0]).forEach(col => tableHtml += `<th>${col}</th>`);
+        tableHtml += "</tr></thead><tbody>"; 
+        data.forEach(row => {
+          tableHtml += "<tr>";
+          Object.values(row).forEach(v => tableHtml += `<td>${v === null ? 'NULL' : v}</td>`);
+          tableHtml += "</tr>";
+        });
+        tableHtml += "</tbody></table>"; 
+        container.innerHTML = tableHtml;
+      }
+
+      await createInsertForm(table);
+      await createUpdateForm(table);
+      await createDeleteForm(table);
+
+      showPanel('tableData');
+    }
+
+    async function createInsertForm(table) {
+      const res = await fetch(`/api/columns/${table}`);
+      const columns = await res.json();
+      const formDiv = document.getElementById("insertForm");
+
+      let formHtml = `<h4>Insert New Record</h4>`;
+      columns.forEach(col => {
+        if (col.Extra.includes('auto_increment')) return; 
+
+        formHtml += `
+          <label>${col.Field} (${col.Type})</label>
+          <input id="ins_${col.Field}" placeholder="Enter ${col.Field}" />
+        `;
+      });
+      formHtml += `<button class="action action-insert" onclick="insertRecord('${table}')">Insert</button>`;
+      formDiv.innerHTML = formHtml;
+    }
+
+    async function insertRecord(table) {
+      const res = await fetch(`/api/columns/${table}`);
+      const columns = await res.json();
+      const data = {};
+      columns.forEach(col => {
+        if (col.Extra.includes('auto_increment')) return;
+        data[col.Field] = document.getElementById(`ins_${col.Field}`).value;
+      });
+
+      const result = await fetch("/api/insert", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ table, data })
+      });
+      const msg = await result.json();
+      alert(msg.message);
+      if(result.ok) loadTableData(table); 
+    }
+
+    async function createUpdateForm(table) {
+      const res = await fetch(`/api/columns/${table}`);
+      const columns = await res.json();
+      const formDiv = document.getElementById("updateForm");
+
+      const pkColumn = columns.find(c => c.Key === 'PRI');
+      
+      let formHtml = `<h4>Update Record</h4>
+      <label>ID Column (Primary Key)</label>
+      <input id="updateIdColumn" type="text" value="${pkColumn ? pkColumn.Field : 'ID'}" readonly style="background:#eee;">
+      
+      <label>Record ID Value</label>
+      <input id="updateIdValue" placeholder="Enter ID value to update" />
+      <hr style="border:0; border-top:1px solid #eee; margin: 20px 0;">`; 
+
+      columns.forEach(col => {
+        if (col.Key === 'PRI') return;
+        
+        formHtml += `
+          <label>${col.Field}</label>
+          <input id="upd_${col.Field}" placeholder="New value for ${col.Field}" />`;
+      });
+
+      formHtml += `<button class="action action-update" onclick="updateRecord('${table}')">Update</button>`;
+      formDiv.innerHTML = formHtml;
+    }
+
+    async function updateRecord(table) {
+      const idColumn = document.getElementById("updateIdColumn").value;
+      const idValue = document.getElementById("updateIdValue").value;
+      if (!idValue) {
+        alert("Please enter a Record ID Value to update.");
+        return;
+      }
+
+      const res = await fetch(`/api/columns/${table}`);
+      const columns = await res.json();
+
+      const data = {};
+      let hasUpdate = false;
+      columns.forEach(col => {
+        if (col.Key === 'PRI') return; 
+        
+        const val = document.getElementById(`upd_${col.Field}`).value;
+        if (val) {
+          data[col.Field] = val; 
+          hasUpdate = true;
+        }
+      });
+
+      if (!hasUpdate) {
+        alert("Please enter at least one new value to update.");
+        return;
+      }
+
+      const result = await fetch("/api/update", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ table, idColumn, idValue, data })
+      });
+
+      const msg = await result.json();
+      alert(msg.message);
+      if(result.ok) loadTableData(table);
+    }
+
+    async function createDeleteForm(table) {
+      const res = await fetch(`/api/columns/${table}`);
+      const columns = await res.json();
+      const formDiv = document.getElementById("deleteForm");
+
+      const pkColumn = columns.find(c => c.Key === 'PRI');
+
+      let formHtml = `<h4>Delete Record</h4>
+      <p style="text-align:center; color: #555;">Select the column and ID of the record you wish to delete.</p>
+      
+      <label>ID Column (Primary Key)</label>
+      <input id="deleteIdColumn" type="text" value="${pkColumn ? pkColumn.Field : 'ID'}" readonly style="background:#eee;">
+
+      <label>Record ID Value</label>
+      <input id="deleteIdValue" placeholder="Enter ID value to delete" />
+      
+      <button class="action action-delete" onclick="deleteRecord('${table}')">Delete</button>`;
+
+      formDiv.innerHTML = formHtml;
+    }
+
+    async function deleteRecord(table) {
+      const idColumn = document.getElementById("deleteIdColumn").value;
+      const idValue = document.getElementById("deleteIdValue").value;
+
+      if (!idValue) {
+        alert("Please enter a Record ID Value to delete.");
+        return;
+      }
+
+      if (!confirm(`Are you sure you want to delete the record from ${table} where ${idColumn} = ${idValue}? This cannot be undone.`)) {
+        return;
+      }
+
+      const result = await fetch("/api/delete", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ table, idColumn, idValue })
+      });
+
+      const msg = await result.json();
+      alert(msg.message);
+      if(result.ok) loadTableData(table);
+    }
+
+    function resetView() {
+      document.querySelector('.content').classList.remove('data-active');
+      currentTable = null; 
+    }
+
+    document.getElementById('home-button').addEventListener('click', resetView);
+    document.getElementById('btn-view').addEventListener('click', () => showPanel('tableData'));
+    document.getElementById('btn-insert').addEventListener('click', () => showPanel('insertForm'));
+    document.getElementById('btn-update').addEventListener('click', () => showPanel('updateForm'));
+    document.getElementById('btn-delete').addEventListener('click', () => showPanel('deleteForm'));
+
+    loadTables();
+</script>
+</body>
+</html>
