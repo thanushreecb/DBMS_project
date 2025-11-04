@@ -22,7 +22,6 @@ db.connect(err => {
 });
 
 // Get All Tables
-// ✅ FIX: Path changed to /api/tables to match frontend
 app.get("/api/tables", (req, res) => {
  const query = "SHOW TABLES";
  db.query(query, (err, results) => {
@@ -109,11 +108,9 @@ app.get("/api/columns/:table", (req, res) => {
       console.error("Error fetching columns:", err);
       return res.status(500).json({ message: "Error fetching columns" });
     }
-    // Results will be an array of objects with { Field, Type, Null, Key, ... }
     res.json(results); 
   });
 });
-
 
 // INSERT
 app.post("/api/insert", (req, res) => {
@@ -149,7 +146,6 @@ app.put("/api/update", (req, res) => {
   res.json({ message: `${result.affectedRows} record(s) updated.` });
  });
 });
-
 
 // DELETE record
 app.delete("/api/delete", (req, res) => {
