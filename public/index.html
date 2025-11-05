@@ -40,6 +40,7 @@
       flex-direction: column; 
       align-items: center; 
       box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      position: relative; /* Needed for hamburger button */
     }
     .navbar h2 {
       margin: 0; 
@@ -244,8 +245,120 @@
     .action.action-delete { background: #dc3545; }
     .action.action-delete:hover { background: #b02a37; }
 
+    /* --- NEW SIDEBAR STYLES --- */
+    .hamburger-btn {
+      position: absolute;
+      top: 28px; /* Adjusted position */
+      left: 25px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 10px;
+      z-index: 1002; /* Above sidebar */
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .hamburger-btn span {
+      display: block;
+      width: 25px;
+      height: 3px;
+      background: #a0c7ff; /* Light blue, stands out on gradient */
+      border-radius: 3px;
+      transition: all 0.3s ease;
+    }
+    .hamburger-btn:hover span {
+      background: #d0e3ff; /* Brighter blue on hover */
+    }
+    .sidebar.open ~ .hamburger-btn span:nth-child(1) {
+      transform: translateY(8px) rotate(45deg);
+    }
+    .sidebar.open ~ .hamburger-btn span:nth-child(2) {
+      opacity: 0;
+    }
+    .sidebar.open ~ .hamburger-btn span:nth-child(3) {
+      transform: translateY(-8px) rotate(-45deg);
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+      z-index: 1000;
+    }
+    .overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: -300px; /* Start off-screen */
+      width: 280px;
+      height: 100%;
+      background: #0d1b2a; /* Dark Blue Theme */
+      box-shadow: 4px 0 12px rgba(0,0,0,0.2);
+      z-index: 1001;
+      transition: left 0.3s ease-in-out;
+      padding: 20px;
+      color: #e8eaed; /* Light text */
+    }
+    .sidebar.open {
+      left: 0;
+    }
+    .sidebar h4 {
+      margin-top: 50px; /* Space for close button/hamburger */
+      margin-bottom: 25px;
+      font-size: 1.2em;
+      font-weight: 500;
+      border-bottom: 1px solid #415a77; /* Border for blue */
+      padding-bottom: 10px;
+    }
+    .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      background: none;
+      border: none;
+      font-size: 2.5em;
+      color: #888;
+      cursor: pointer;
+    }
+    .sidebar-menu {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .sidebar-btn {
+      background: #1b263b; /* Button for blue */
+      color: #e8eaed;
+      border: none;
+      padding: 12px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: left;
+      font-size: 1em;
+      font-weight: 500;
+      transition: background 0.2s ease;
+    }
+    .sidebar-btn:hover {
+      background: #415a77; /* Hover for blue */
+    }
+    /* --- END SIDEBAR STYLES --- */
+
+
     /* --- Responsive Styles --- */
     @media (max-width: 768px) {
+      .hamburger-btn {
+        top: 20px;
+        left: 15px;
+      }
       .slider-wrapper {
         width: 200%;
       }
@@ -272,11 +385,27 @@
   </style>
 </head>
 <body>
+  <button id="summaryToggleBtn" class="hamburger-btn">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
   <div class="navbar">
     <h2 id="home-button">🛒 Department Store DB</h2>
     <div id="tablesMenu"></div>
   </div>
 
+  <div id="summarySidebar" class="sidebar">
+    <button id="closeSidebarBtn" class="close-btn">&times;</button>
+    <h4>DB Summaries</h4>
+    <div class="sidebar-menu">
+      <button onclick="runQuery('topCustomers')" class="sidebar-btn">Top Customers (Nested)</button>
+      <button onclick="runQuery('employeeDepartments')" class="sidebar-btn">Employee Departments (Join)</button>
+      <button onclick="runQuery('transactionSummary')" class="sidebar-btn">Transaction Summary (Aggregate)</button>
+    </div>
+  </div>
+  <div id="overlay" class="overlay"></div>
   <div class="content">
     <div class="slider-wrapper">
       <div class="dashboard-prompt">
@@ -286,7 +415,7 @@
       <div class="data-view">
         <h3 id="selectedTableTitle"></h3> 
         
-        <div class="action-menu">
+        <div id="crud-action-menu" class="action-menu">
           <button id="btn-view" class="action-btn">View</button>
           <button id="btn-insert" class="action-btn">Insert</button>
           <button id="btn-update" class="action-btn">Update</button>
@@ -302,236 +431,339 @@
   </div>
 
 <script>
-    const dataPanels = document.querySelectorAll('.data-panel');
-    const actionButtons = document.querySelectorAll('.action-btn');
-    let currentTable = null; 
+  // UPDATED: More specific selector for main buttons
+  const dataPanels = document.querySelectorAll('.data-panel');
+  const actionButtons = document.querySelectorAll('#btn-view, #btn-insert, #btn-update, #btn-delete');
+  let currentTable = null;
+  let currentDisplayName = null; // Store display name
 
-    function showPanel(panelId) {
-      dataPanels.forEach(panel => panel.style.display = 'none');
-      actionButtons.forEach(btn => btn.classList.remove('active'));
-      document.getElementById(panelId).style.display = 'block';
-      const map = {
-        tableData: 'btn-view',
-        insertForm: 'btn-insert',
-        updateForm: 'btn-update',
-        deleteForm: 'btn-delete'
-      };
+  // NEW: Sidebar elements
+  const summaryToggleBtn = document.getElementById('summaryToggleBtn');
+  const sidebar = document.getElementById('summarySidebar');
+  const overlay = document.getElementById('overlay');
+  const closeBtn = document.getElementById('closeSidebarBtn');
+
+  // NEW: Functions to open/close sidebar
+  function openSidebar() {
+    sidebar.classList.add('open');
+    overlay.classList.add('open');
+  }
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('open');
+  }
+
+  function showPanel(panelId) {
+    dataPanels.forEach(panel => panel.style.display = 'none');
+    actionButtons.forEach(btn => btn.classList.remove('active'));
+    
+    const panelToShow = document.getElementById(panelId);
+    if (panelToShow) {
+        panelToShow.style.display = 'block';
+    }
+    
+    const map = {
+      tableData: 'btn-view',
+      insertForm: 'btn-insert',
+      updateForm: 'btn-update',
+      deleteForm: 'btn-delete'
+    };
+    if (map[panelId]) {
       document.getElementById(map[panelId]).classList.add('active');
     }
+  }
 
-    async function loadTables() {
-      try {
-        const res = await fetch("/api/tables");
-        if (!res.ok) throw new Error(`Server error: ${res.status}`);
-        
-        const tables = await res.json(); // This is now [{name: '...', displayName: '...'}, ...]
-        const menu = document.getElementById("tablesMenu");
-        menu.innerHTML = ''; // Clear old buttons
-        
-        tables.forEach(t => {
-          const btn = document.createElement("button");
-          btn.textContent = t.displayName;      // Shows 'Customer'
-          btn.onclick = () => loadTableData(t.name, t.displayName); // Uses 'customer'
-          menu.appendChild(btn);
-        });
-      } catch (err) {
-        console.error("Failed to load tables:", err);
-        alert("Failed to load tables. Check console for details.");
-      }
+  async function loadTables() {
+    try {
+      const res = await fetch("/api/tables");
+      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      const tables = await res.json();
+      const menu = document.getElementById("tablesMenu");
+      menu.innerHTML = '';
+      tables.forEach(t => {
+        const btn = document.createElement("button");
+        btn.textContent = t.displayName;
+        btn.onclick = () => loadTableData(t.name, t.displayName);
+        menu.appendChild(btn);
+      });
+    } catch (err) {
+      console.error("Failed to load tables:", err);
+      alert("Failed to load tables. Check console for details.");
+    }
+  }
+
+  async function loadTableData(table, displayName) {
+    // ✅ NEW: Show the CRUD buttons when a table is loaded
+    document.getElementById('crud-action-menu').style.display = 'flex';
+
+    document.querySelector('.content').classList.add('data-active');
+    document.getElementById("selectedTableTitle").textContent = `${displayName} Table`;
+    currentTable = table;
+    currentDisplayName = displayName; // Store display name
+
+    const res = await fetch(`/api/data/${table}`);
+    const data = await res.json();
+    const container = document.getElementById("tableData");
+
+    if (!data.length) {
+      container.innerHTML = "<p style='text-align:center;'>No records found.</p>";
+    } else {
+      let tableHtml = "<table><thead><tr>";
+      Object.keys(data[0]).forEach(col => tableHtml += `<th>${col}</th>`);
+      tableHtml += "</tr></thead><tbody>";
+      data.forEach(row => {
+        tableHtml += "<tr>";
+        Object.values(row).forEach(v => tableHtml += `<td>${v === null ? 'NULL' : v}</td>`);
+        tableHtml += "</tr>";
+      });
+      tableHtml += "</tbody></table>";
+      container.innerHTML = tableHtml;
     }
 
+    await createInsertForm(table);
+    await createUpdateForm(table);
+    await createDeleteForm(table);
+    showPanel('tableData');
+  }
 
-    async function loadTableData(table, displayName) {
-      document.querySelector('.content').classList.add('data-active');
-      document.getElementById("selectedTableTitle").textContent = `${displayName} Table`;
-      currentTable = table; 
-      
-      const res = await fetch(`/api/data/${table}`);
-      const data = await res.json();
-      const container = document.getElementById("tableData");
+  async function createInsertForm(table) {
+    const res = await fetch(`/api/columns/${table}`);
+    const columns = await res.json();
+    const formDiv = document.getElementById("insertForm");
 
-      if (!data.length) {
-        container.innerHTML = "<p style='text-align:center;'>No records found.</p>";
-      } else {
-        let tableHtml = "<table><thead><tr>"; 
-        Object.keys(data[0]).forEach(col => tableHtml += `<th>${col}</th>`);
-        tableHtml += "</tr></thead><tbody>"; 
-        data.forEach(row => {
-          tableHtml += "<tr>";
-          Object.values(row).forEach(v => tableHtml += `<td>${v === null ? 'NULL' : v}</td>`);
-          tableHtml += "</tr>";
-        });
-        tableHtml += "</tbody></table>"; 
-        container.innerHTML = tableHtml;
+    let formHtml = `<h4>Insert New Record</h4>`;
+    columns.forEach(col => {
+      if (col.Extra.includes('auto_increment')) return;
+      formHtml += `
+        <label>${col.Field} (${col.Type})</label>
+        <input id="ins_${col.Field}" placeholder="Enter ${col.Field}" />
+      `;
+    });
+
+    if (table === "customer" || table === "employee") {
+      formHtml += `
+        <label>Phone Numbers</label>
+        <input id="ins_Phones" placeholder="Enter phone numbers (comma-separated)" />
+      `;
+    }
+
+    formHtml += `<button class="action action-insert" onclick="insertRecord('${table}')">Insert</button>`;
+    formDiv.innerHTML = formHtml;
+  }
+
+  async function insertRecord(table) {
+    const res = await fetch(`/api/columns/${table}`);
+    const columns = await res.json();
+    const data = {};
+    columns.forEach(col => {
+      if (col.Extra.includes('auto_increment')) return;
+      data[col.Field] = document.getElementById(`ins_${col.Field}`).value;
+    });
+
+    let phones = null;
+    if (table === "customer" || table === "employee") {
+      phones = document.getElementById("ins_Phones").value;
+    }
+
+    const result = await fetch("/api/insert", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ table, data, phones })
+    });
+    const msg = await result.json();
+    alert(msg.message);
+    if (result.ok) loadTableData(table, currentDisplayName); 
+  }
+
+  async function createUpdateForm(table) {
+    const res = await fetch(`/api/columns/${table}`);
+    const columns = await res.json();
+    const formDiv = document.getElementById("updateForm");
+    const pkColumn = columns.find(c => c.Key === 'PRI');
+
+    let formHtml = `<h4>Update Record</h4>
+    <label>ID Column (Primary Key)</label>
+    <input id="updateIdColumn" type="text" value="${pkColumn ? pkColumn.Field : 'ID'}" readonly style="background:#eee;">
+    <label>Record ID Value</label>
+    <input id="updateIdValue" placeholder="Enter ID value to update" />
+    <hr style="border:0; border-top:1px solid #eee; margin: 20px 0;">`;
+
+    columns.forEach(col => {
+      if (col.Key === 'PRI') return;
+      formHtml += `
+        <label>${col.Field}</label>
+        <input id="upd_${col.Field}" placeholder="New value for ${col.Field}" />`;
+    });
+
+    if (table === "customer" || table === "employee") {
+      formHtml += `
+        <label>Phone Numbers</label>
+        <input id="upd_Phones" placeholder="Enter updated phone numbers (comma-separated)" />
+      `;
+    }
+
+    formHtml += `<button class="action action-update" onclick="updateRecord('${table}')">Update</button>`;
+    formDiv.innerHTML = formHtml;
+  }
+
+  async function updateRecord(table) {
+    const idColumn = document.getElementById("updateIdColumn").value;
+    const idValue = document.getElementById("updateIdValue").value;
+    if (!idValue) {
+      alert("Please enter a Record ID Value to update.");
+      return;
+    }
+
+    const res = await fetch(`/api/columns/${table}`);
+    const columns = await res.json();
+    const data = {};
+    let hasUpdate = false;
+
+    columns.forEach(col => {
+      if (col.Key === 'PRI') return;
+      const val = document.getElementById(`upd_${col.Field}`).value;
+      if (val) {
+        data[col.Field] = val;
+        hasUpdate = true;
       }
+    });
 
-      await createInsertForm(table);
-      await createUpdateForm(table);
-      await createDeleteForm(table);
+    let phones = null;
+    if (table === "customer" || table === "employee") {
+      phones = document.getElementById("upd_Phones").value;
+      if (phones) hasUpdate = true;
+    }
 
+    if (!hasUpdate) {
+      alert("Please enter at least one new value to update.");
+      return;
+    }
+
+    const result = await fetch("/api/update", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ table, idColumn, idValue, data, phones })
+    });
+
+    const msg = await result.json();
+    alert(msg.message);
+    if (result.ok) loadTableData(table, currentDisplayName);
+  }
+
+  async function createDeleteForm(table) {
+    const res = await fetch(`/api/columns/${table}`);
+    const columns = await res.json();
+    const formDiv = document.getElementById("deleteForm");
+    const pkColumn = columns.find(c => c.Key === 'PRI');
+
+    let formHtml = `<h4>Delete Record</h4>
+    <label>ID Column (Primary Key)</label>
+    <input id="deleteIdColumn" type="text" value="${pkColumn ? pkColumn.Field : 'ID'}" readonly style="background:#eee;">
+    <label>Record ID Value</label>
+    <input id="deleteIdValue" placeholder="Enter ID value to delete" />
+    <button class="action action-delete" onclick="deleteRecord('${table}')">Delete</button>`;
+
+    formDiv.innerHTML = formHtml;
+  }
+
+  async function deleteRecord(table) {
+    const idColumn = document.getElementById("deleteIdColumn").value;
+    const idValue = document.getElementById("deleteIdValue").value;
+    if (!idValue) {
+      alert("Please enter a Record ID Value to delete.");
+      return;
+    }
+    if (!confirm(`Delete from ${table} where ${idColumn} = ${idValue}?`)) return;
+
+    const result = await fetch("/api/delete", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ table, idColumn, idValue })
+    });
+    const msg = await result.json();
+    alert(msg.message);
+    if (result.ok) loadTableData(table, currentDisplayName);
+  }
+
+  function resetView() {
+    document.querySelector('.content').classList.remove('data-active');
+    // ✅ NEW: Show CRUD buttons when returning home
+    document.getElementById('crud-action-menu').style.display = 'flex';
+    currentTable = null;
+    currentDisplayName = null;
+  }
+
+  document.getElementById('home-button').addEventListener('click', resetView);
+  document.getElementById('btn-view').addEventListener('click', () => showPanel('tableData'));
+  document.getElementById('btn-insert').addEventListener('click', () => showPanel('insertForm'));
+  document.getElementById('btn-update').addEventListener('click', () => showPanel('updateForm'));
+  document.getElementById('btn-delete').addEventListener('click', () => showPanel('deleteForm'));
+
+  // NEW: Event listeners for sidebar
+  summaryToggleBtn.addEventListener('click', () => {
+    // Toggle sidebar
+    if (sidebar.classList.contains('open')) {
+      closeSidebar();
+    } else {
+      openSidebar();
+    }
+  });
+  closeBtn.addEventListener('click', closeSidebar);
+  overlay.addEventListener('click', closeSidebar);
+
+  loadTables();
+
+  // UPDATED: This function now formats the title correctly
+  async function runQuery(type) {
+  try {
+    // ✅ NEW: Hide the CRUD buttons when a query is run
+    document.getElementById('crud-action-menu').style.display = 'none';
+
+    // Force the slider to the data view
+    document.querySelector('.content').classList.add('data-active');
+    
+    // UPDATED: Set the main title to the query name
+    // 'topCustomers' -> 'top Customers'
+    const queryTitle = type.replace(/([A-Z])/g, ' $1'); 
+    // 'top Customers' -> 'Top Customers'
+    const finalTitle = queryTitle.toLowerCase().split(' ').map(s => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');
+    document.getElementById("selectedTableTitle").textContent = finalTitle; // Sets title to "Top Customers"
+
+    const res = await fetch(`/api/query/${type}`);
+    if (!res.ok) throw new Error(`Server error: ${res.status}`);
+    const data = await res.json();
+
+    const container = document.getElementById("tableData");
+    if (!data.length) {
+      container.innerHTML = `<p style='text-align:center;'>No results found for query: ${type}</p>`;
       showPanel('tableData');
+      return;
     }
 
-    async function createInsertForm(table) {
-      const res = await fetch(`/api/columns/${table}`);
-      const columns = await res.json();
-      const formDiv = document.getElementById("insertForm");
+    // REMOVED: The old <h4> tag, since we now use the main title
+    let html = "<table><thead><tr>";
+    Object.keys(data[0]).forEach(col => html += `<th>${col}</th>`);
+    html += "</tr></thead><tbody>";
+    data.forEach(row => {
+      html += "<tr>";
+      Object.values(row).forEach(v => html += `<td>${v ?? 'NULL'}</td>`);
+      html += "</tr>";
+    });
+    html += "</tbody></table>";
+    container.innerHTML = html;
+    
+    // This makes the table visible and activates the "VIEW" button
+    showPanel('tableData'); 
+    
+    // This closes the sidebar
+    closeSidebar(); 
+  } catch (err) {
+    console.error("Error running query:", err);
+    alert("Failed to execute query. Check console for details.");
+  }
+}
 
-      let formHtml = `<h4>Insert New Record</h4>`;
-      columns.forEach(col => {
-        if (col.Extra.includes('auto_increment')) return; 
-
-        formHtml += `
-          <label>${col.Field} (${col.Type})</label>
-          <input id="ins_${col.Field}" placeholder="Enter ${col.Field}" />
-        `;
-      });
-      formHtml += `<button class="action action-insert" onclick="insertRecord('${table}')">Insert</button>`;
-      formDiv.innerHTML = formHtml;
-    }
-
-    async function insertRecord(table) {
-      const res = await fetch(`/api/columns/${table}`);
-      const columns = await res.json();
-      const data = {};
-      columns.forEach(col => {
-        if (col.Extra.includes('auto_increment')) return;
-        data[col.Field] = document.getElementById(`ins_${col.Field}`).value;
-      });
-
-      const result = await fetch("/api/insert", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ table, data })
-      });
-      const msg = await result.json();
-      alert(msg.message);
-      if(result.ok) loadTableData(table); 
-    }
-
-    async function createUpdateForm(table) {
-      const res = await fetch(`/api/columns/${table}`);
-      const columns = await res.json();
-      const formDiv = document.getElementById("updateForm");
-
-      const pkColumn = columns.find(c => c.Key === 'PRI');
-      
-      let formHtml = `<h4>Update Record</h4>
-      <label>ID Column (Primary Key)</label>
-      <input id="updateIdColumn" type="text" value="${pkColumn ? pkColumn.Field : 'ID'}" readonly style="background:#eee;">
-      
-      <label>Record ID Value</label>
-      <input id="updateIdValue" placeholder="Enter ID value to update" />
-      <hr style="border:0; border-top:1px solid #eee; margin: 20px 0;">`; 
-
-      columns.forEach(col => {
-        if (col.Key === 'PRI') return;
-        
-        formHtml += `
-          <label>${col.Field}</label>
-          <input id="upd_${col.Field}" placeholder="New value for ${col.Field}" />`;
-      });
-
-      formHtml += `<button class="action action-update" onclick="updateRecord('${table}')">Update</button>`;
-      formDiv.innerHTML = formHtml;
-    }
-
-    async function updateRecord(table) {
-      const idColumn = document.getElementById("updateIdColumn").value;
-      const idValue = document.getElementById("updateIdValue").value;
-      if (!idValue) {
-        alert("Please enter a Record ID Value to update.");
-        return;
-      }
-
-      const res = await fetch(`/api/columns/${table}`);
-      const columns = await res.json();
-
-      const data = {};
-      let hasUpdate = false;
-      columns.forEach(col => {
-        if (col.Key === 'PRI') return; 
-        
-        const val = document.getElementById(`upd_${col.Field}`).value;
-        if (val) {
-          data[col.Field] = val; 
-          hasUpdate = true;
-        }
-      });
-
-      if (!hasUpdate) {
-        alert("Please enter at least one new value to update.");
-        return;
-      }
-
-      const result = await fetch("/api/update", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ table, idColumn, idValue, data })
-      });
-
-      const msg = await result.json();
-      alert(msg.message);
-      if(result.ok) loadTableData(table);
-    }
-
-    async function createDeleteForm(table) {
-      const res = await fetch(`/api/columns/${table}`);
-      const columns = await res.json();
-      const formDiv = document.getElementById("deleteForm");
-
-      const pkColumn = columns.find(c => c.Key === 'PRI');
-
-      let formHtml = `<h4>Delete Record</h4>
-      <p style="text-align:center; color: #555;">Select the column and ID of the record you wish to delete.</p>
-      
-      <label>ID Column (Primary Key)</label>
-      <input id="deleteIdColumn" type="text" value="${pkColumn ? pkColumn.Field : 'ID'}" readonly style="background:#eee;">
-
-      <label>Record ID Value</label>
-      <input id="deleteIdValue" placeholder="Enter ID value to delete" />
-      
-      <button class="action action-delete" onclick="deleteRecord('${table}')">Delete</button>`;
-
-      formDiv.innerHTML = formHtml;
-    }
-
-    async function deleteRecord(table) {
-      const idColumn = document.getElementById("deleteIdColumn").value;
-      const idValue = document.getElementById("deleteIdValue").value;
-
-      if (!idValue) {
-        alert("Please enter a Record ID Value to delete.");
-        return;
-      }
-
-      if (!confirm(`Are you sure you want to delete the record from ${table} where ${idColumn} = ${idValue}? This cannot be undone.`)) {
-        return;
-      }
-
-      const result = await fetch("/api/delete", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ table, idColumn, idValue })
-      });
-
-      const msg = await result.json();
-      alert(msg.message);
-      if(result.ok) loadTableData(table);
-    }
-
-    function resetView() {
-      document.querySelector('.content').classList.remove('data-active');
-      currentTable = null; 
-    }
-
-    document.getElementById('home-button').addEventListener('click', resetView);
-    document.getElementById('btn-view').addEventListener('click', () => showPanel('tableData'));
-    document.getElementById('btn-insert').addEventListener('click', () => showPanel('insertForm'));
-    document.getElementById('btn-update').addEventListener('click', () => showPanel('updateForm'));
-    document.getElementById('btn-delete').addEventListener('click', () => showPanel('deleteForm'));
-
-    loadTables();
 </script>
+
 </body>
 </html>

@@ -22,7 +22,6 @@ db.connect(err => {
 });
 
 // Get All Tables
-// ✅ FIX: Path changed to /api/tables to match frontend
 app.get("/api/tables", (req, res) => {
  const query = "SHOW TABLES";
  db.query(query, (err, results) => {
@@ -109,17 +108,57 @@ app.get("/api/columns/:table", (req, res) => {
       console.error("Error fetching columns:", err);
       return res.status(500).json({ message: "Error fetching columns" });
     }
-    // Results will be an array of objects with { Field, Type, Null, Key, ... }
     res.json(results); 
   });
 });
-
 
 // INSERT
 app.post("/api/insert", (req, res) => {
  const { table, data } = req.body;
   if (!table || !data) return res.status(400).json({ message: "Missing parameters" });
+ 
+// --- CASE 1: Customer ---
+  if (table === "customer") {
+    const { Fname, Lname, Address, Total_Spent, Membership_Status, PhoneNumbers } = data;
 
+    const sql1 = `INSERT INTO customer (Fname, Lname, Address, Total_Spent, Membership_Status)
+                  VALUES (?, ?, ?, ?, ?)`;
+
+    db.query(sql1, [Fname, Lname, Address, Total_Spent, Membership_Status], (err, result) => {
+      if (err) return res.status(500).json({ message: err.sqlMessage });
+      const customerId = result.insertId;
+
+      // Insert multiple phones
+      if (PhoneNumbers && PhoneNumbers.length > 0) {
+        const phones = PhoneNumbers.split(",").map(p => [customerId, p.trim()]);
+        db.query(`INSERT INTO customerphone (Customer_id, C_Phone_Number) VALUES ?`, [phones]);
+      }
+
+      res.json({ message: "Customer added successfully!" });
+    });
+  }
+
+  // --- CASE 2: Employee ---
+  else if (table === "employee") {
+    const { Emp_Fname, Emp_Lname, Job_title, Email, E_address, Salary, Dept_id, Manager_id, PhoneNumbers } = data;
+
+    const sql1 = `INSERT INTO employee (Emp_Fname, Emp_Lname, Job_title, Email, E_address, Salary, Dept_id, Manager_id)
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+
+    db.query(sql1, [Emp_Fname, Emp_Lname, Job_title, Email, E_address, Salary, Dept_id, Manager_id], (err, result) => {
+      if (err) return res.status(500).json({ message: err.sqlMessage });
+      const empId = result.insertId;
+
+      if (PhoneNumbers && PhoneNumbers.length > 0) {
+        const phones = PhoneNumbers.split(",").map(p => [empId, p.trim()]);
+        db.query(`INSERT INTO employeephone (Employee_id, E_Phone_Number) VALUES ?`, [phones]);
+      }
+
+      res.json({ message: "Employee added successfully!" });
+    });
+  }
+ 
+ else {
  const cols = Object.keys(data).join(", ");
  const vals = Object.values(data);
  const placeholders = vals.map(() => "?").join(", ");
@@ -128,6 +167,7 @@ app.post("/api/insert", (req, res) => {
   if (err) return res.status(500).json({ message: "Insert failed: " + err.sqlMessage });
   res.json({ message: "Record inserted successfully!" });
  });
+ }
 });
 
 // UPDATE record
@@ -137,6 +177,46 @@ app.put("/api/update", (req, res) => {
  if (!table || !idColumn || !idValue || !data)
   return res.status(400).json({ message: "Missing parameters" });
 
+ // --- Customer update ---
+  if (table === "customer") {
+    const { Fname, Lname, Address, Total_Spent, Membership_Status, PhoneNumbers } = data;
+    const sql1 = `UPDATE customer SET Fname=?, Lname=?, Address=?, Total_Spent=?, Membership_Status=? WHERE Customer_id=?`;
+
+    db.query(sql1, [Fname, Lname, Address, Total_Spent, Membership_Status, idValue], (err) => {
+      if (err) return res.status(500).json({ message: err.message });
+
+      // Replace old phones
+      db.query(`DELETE FROM customerphone WHERE Customer_id=?`, [idValue], (err) => {
+        if (!err && PhoneNumbers) {
+          const phones = PhoneNumbers.split(",").map(p => [idValue, p.trim()]);
+          db.query(`INSERT INTO customerphone (Customer_id, C_Phone_Number) VALUES ?`, [phones]);
+        }
+      });
+
+      res.json({ message: "Customer updated successfully!" });
+    });
+  }
+
+  // --- Employee update ---
+  else if (table === "employee") {
+    const { Emp_Fname, Emp_Lname, Job_title, Email, E_address, Salary, Dept_id, Manager_id, PhoneNumbers } = data;
+    const sql1 = `UPDATE employee SET Emp_Fname=?, Emp_Lname=?, Job_title=?, Email=?, E_address=?, Salary=?, Dept_id=?, Manager_id=? WHERE Employee_id=?`;
+
+    db.query(sql1, [Emp_Fname, Emp_Lname, Job_title, Email, E_address, Salary, Dept_id, Manager_id, idValue], (err) => {
+      if (err) return res.status(500).json({ message: err.message });
+
+      db.query(`DELETE FROM employeephone WHERE Employee_id=?`, [idValue], (err) => {
+        if (!err && PhoneNumbers) {
+          const phones = PhoneNumbers.split(",").map(p => [idValue, p.trim()]);
+          db.query(`INSERT INTO employeephone (Employee_id, E_Phone_Number) VALUES ?`, [phones]);
+        }
+      });
+
+      res.json({ message: "Employee updated successfully!" });
+    });
+  }
+
+ else {
  const setClause = Object.keys(data)
   .map(col => `${col} = ?`)
   .join(", ");
@@ -148,8 +228,8 @@ app.put("/api/update", (req, res) => {
   if (err) return res.status(500).json({ message: err.message });
   res.json({ message: `${result.affectedRows} record(s) updated.` });
  });
+ }
 });
-
 
 // DELETE record
 app.delete("/api/delete", (req, res) => {
@@ -158,11 +238,74 @@ app.delete("/api/delete", (req, res) => {
  if (!table || !idColumn || !idValue)
   return res.status(400).json({ message: "Missing parameters" });
 
+ if (table === "customer") {
+    db.query(`DELETE FROM customerphone WHERE Customer_id=?`, [idValue], () => {
+      db.query(`DELETE FROM customer WHERE Customer_id=?`, [idValue], (err, result) => {
+        if (err) return res.status(500).json({ message: err.message });
+        res.json({ message: "Customer and phones deleted successfully." });
+      });
+    });
+  } else if (table === "employee") {
+    db.query(`DELETE FROM employeephone WHERE Employee_id=?`, [idValue], () => {
+      db.query(`DELETE FROM employee WHERE Employee_id=?`, [idValue], (err, result) => {
+        if (err) return res.status(500).json({ message: err.message });
+        res.json({ message: "Employee and phones deleted successfully." });
+      });
+    });
+  } else {
  const sql = `DELETE FROM ${table} WHERE ${idColumn} = ?`;
  db.query(sql, [idValue], (err, result) => {
   if (err) return res.status(500).json({ message: err.message });
   res.json({ message: `${result.affectedRows} record(s) deleted.` });
  });
+ }
+});
+
+// ---------------- CUSTOM QUERY ROUTES ----------------
+
+// 1️. Nested Query — Customers spending above average
+app.get("/api/query/topCustomers", (req, res) => {
+  const sql = `
+    SELECT Fname, Lname, Total_Spent
+    FROM customer
+    WHERE Total_Spent > (SELECT AVG(Total_Spent) FROM customer);
+  `;
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json({ message: err.message });
+    res.json(results);
+  });
+});
+
+// 2️. Join Query — Employees with their department names
+app.get("/api/query/employeeDepartments", (req, res) => {
+  const sql = `
+    SELECT e.Employee_id, e.Emp_Fname, e.Emp_Lname, d.Dept_name
+    FROM employee e
+    JOIN department d ON e.Dept_id = d.Dept_id;
+  `;
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json({ message: err.message });
+    res.json(results);
+  });
+});
+
+// 3️. Aggregate Query — Total number of purchases & revenue
+app.get("/api/query/transactionSummary", (req, res) => {
+  const query = `
+    SELECT
+      COUNT(Transaction_id) AS TotalTransactions,
+      SUM(Total_Amount) AS TotalRevenue,
+      AVG(Total_Amount) AS AverageTransactionValue
+    FROM transactiontable;
+  `; 
+  
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error("Error running query:", err);
+      return res.status(500).send("Error running query");
+    }
+    res.json(results);
+  });
 });
 
 
