@@ -261,6 +261,53 @@ app.delete("/api/delete", (req, res) => {
  }
 });
 
+// ---------------- CUSTOM QUERY ROUTES ----------------
+
+// 1️. Nested Query — Customers spending above average
+app.get("/api/query/topCustomers", (req, res) => {
+  const sql = `
+    SELECT Fname, Lname, Total_Spent
+    FROM customer
+    WHERE Total_Spent > (SELECT AVG(Total_Spent) FROM customer);
+  `;
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json({ message: err.message });
+    res.json(results);
+  });
+});
+
+// 2️. Join Query — Employees with their department names
+app.get("/api/query/employeeDepartments", (req, res) => {
+  const sql = `
+    SELECT e.Employee_id, e.Emp_Fname, e.Emp_Lname, d.Dept_name
+    FROM employee e
+    JOIN department d ON e.Dept_id = d.Dept_id;
+  `;
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json({ message: err.message });
+    res.json(results);
+  });
+});
+
+// 3️. Aggregate Query — Total number of purchases & revenue
+app.get("/api/query/transactionSummary", (req, res) => {
+  const query = `
+    SELECT
+      COUNT(Transaction_id) AS TotalTransactions,
+      SUM(Total_Amount) AS TotalRevenue,
+      AVG(Total_Amount) AS AverageTransactionValue
+    FROM transactiontable;
+  `; 
+  
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error("Error running query:", err);
+      return res.status(500).send("Error running query");
+    }
+    res.json(results);
+  });
+});
+
 
 app.listen(process.env.PORT, () => {
  console.log(`Server running on http://localhost:${process.env.PORT}`);

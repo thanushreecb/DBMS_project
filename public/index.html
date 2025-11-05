@@ -40,6 +40,7 @@
       flex-direction: column; 
       align-items: center; 
       box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      position: relative; /* Needed for hamburger button */
     }
     .navbar h2 {
       margin: 0; 
@@ -244,8 +245,120 @@
     .action.action-delete { background: #dc3545; }
     .action.action-delete:hover { background: #b02a37; }
 
+    /* --- NEW SIDEBAR STYLES --- */
+    .hamburger-btn {
+      position: absolute;
+      top: 28px; /* Adjusted position */
+      left: 25px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 10px;
+      z-index: 1002; /* Above sidebar */
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .hamburger-btn span {
+      display: block;
+      width: 25px;
+      height: 3px;
+      background: #a0c7ff; /* Light blue, stands out on gradient */
+      border-radius: 3px;
+      transition: all 0.3s ease;
+    }
+    .hamburger-btn:hover span {
+      background: #d0e3ff; /* Brighter blue on hover */
+    }
+    .sidebar.open ~ .hamburger-btn span:nth-child(1) {
+      transform: translateY(8px) rotate(45deg);
+    }
+    .sidebar.open ~ .hamburger-btn span:nth-child(2) {
+      opacity: 0;
+    }
+    .sidebar.open ~ .hamburger-btn span:nth-child(3) {
+      transform: translateY(-8px) rotate(-45deg);
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+      z-index: 1000;
+    }
+    .overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: -300px; /* Start off-screen */
+      width: 280px;
+      height: 100%;
+      background: #0d1b2a; /* Dark Blue Theme */
+      box-shadow: 4px 0 12px rgba(0,0,0,0.2);
+      z-index: 1001;
+      transition: left 0.3s ease-in-out;
+      padding: 20px;
+      color: #e8eaed; /* Light text */
+    }
+    .sidebar.open {
+      left: 0;
+    }
+    .sidebar h4 {
+      margin-top: 50px; /* Space for close button/hamburger */
+      margin-bottom: 25px;
+      font-size: 1.2em;
+      font-weight: 500;
+      border-bottom: 1px solid #415a77; /* Border for blue */
+      padding-bottom: 10px;
+    }
+    .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      background: none;
+      border: none;
+      font-size: 2.5em;
+      color: #888;
+      cursor: pointer;
+    }
+    .sidebar-menu {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .sidebar-btn {
+      background: #1b263b; /* Button for blue */
+      color: #e8eaed;
+      border: none;
+      padding: 12px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: left;
+      font-size: 1em;
+      font-weight: 500;
+      transition: background 0.2s ease;
+    }
+    .sidebar-btn:hover {
+      background: #415a77; /* Hover for blue */
+    }
+    /* --- END SIDEBAR STYLES --- */
+
+
     /* --- Responsive Styles --- */
     @media (max-width: 768px) {
+      .hamburger-btn {
+        top: 20px;
+        left: 15px;
+      }
       .slider-wrapper {
         width: 200%;
       }
@@ -272,11 +385,27 @@
   </style>
 </head>
 <body>
+  <button id="summaryToggleBtn" class="hamburger-btn">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
   <div class="navbar">
     <h2 id="home-button">🛒 Department Store DB</h2>
     <div id="tablesMenu"></div>
   </div>
 
+  <div id="summarySidebar" class="sidebar">
+    <button id="closeSidebarBtn" class="close-btn">&times;</button>
+    <h4>DB Summaries</h4>
+    <div class="sidebar-menu">
+      <button onclick="runQuery('topCustomers')" class="sidebar-btn">Top Customers (Nested)</button>
+      <button onclick="runQuery('employeeDepartments')" class="sidebar-btn">Employee Departments (Join)</button>
+      <button onclick="runQuery('transactionSummary')" class="sidebar-btn">Transaction Summary (Aggregate)</button>
+    </div>
+  </div>
+  <div id="overlay" class="overlay"></div>
   <div class="content">
     <div class="slider-wrapper">
       <div class="dashboard-prompt">
@@ -286,7 +415,7 @@
       <div class="data-view">
         <h3 id="selectedTableTitle"></h3> 
         
-        <div class="action-menu">
+        <div id="crud-action-menu" class="action-menu">
           <button id="btn-view" class="action-btn">View</button>
           <button id="btn-insert" class="action-btn">Insert</button>
           <button id="btn-update" class="action-btn">Update</button>
@@ -302,21 +431,46 @@
   </div>
 
 <script>
+  // UPDATED: More specific selector for main buttons
   const dataPanels = document.querySelectorAll('.data-panel');
-  const actionButtons = document.querySelectorAll('.action-btn');
+  const actionButtons = document.querySelectorAll('#btn-view, #btn-insert, #btn-update, #btn-delete');
   let currentTable = null;
+  let currentDisplayName = null; // Store display name
+
+  // NEW: Sidebar elements
+  const summaryToggleBtn = document.getElementById('summaryToggleBtn');
+  const sidebar = document.getElementById('summarySidebar');
+  const overlay = document.getElementById('overlay');
+  const closeBtn = document.getElementById('closeSidebarBtn');
+
+  // NEW: Functions to open/close sidebar
+  function openSidebar() {
+    sidebar.classList.add('open');
+    overlay.classList.add('open');
+  }
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('open');
+  }
 
   function showPanel(panelId) {
     dataPanels.forEach(panel => panel.style.display = 'none');
     actionButtons.forEach(btn => btn.classList.remove('active'));
-    document.getElementById(panelId).style.display = 'block';
+    
+    const panelToShow = document.getElementById(panelId);
+    if (panelToShow) {
+        panelToShow.style.display = 'block';
+    }
+    
     const map = {
       tableData: 'btn-view',
       insertForm: 'btn-insert',
       updateForm: 'btn-update',
       deleteForm: 'btn-delete'
     };
-    document.getElementById(map[panelId]).classList.add('active');
+    if (map[panelId]) {
+      document.getElementById(map[panelId]).classList.add('active');
+    }
   }
 
   async function loadTables() {
@@ -339,9 +493,13 @@
   }
 
   async function loadTableData(table, displayName) {
+    // ✅ NEW: Show the CRUD buttons when a table is loaded
+    document.getElementById('crud-action-menu').style.display = 'flex';
+
     document.querySelector('.content').classList.add('data-active');
     document.getElementById("selectedTableTitle").textContent = `${displayName} Table`;
     currentTable = table;
+    currentDisplayName = displayName; // Store display name
 
     const res = await fetch(`/api/data/${table}`);
     const data = await res.json();
@@ -382,7 +540,6 @@
       `;
     });
 
-    // Extra input for customer/employee phones
     if (table === "customer" || table === "employee") {
       formHtml += `
         <label>Phone Numbers</label>
@@ -403,7 +560,6 @@
       data[col.Field] = document.getElementById(`ins_${col.Field}`).value;
     });
 
-    // Handle phone numbers for merged tables
     let phones = null;
     if (table === "customer" || table === "employee") {
       phones = document.getElementById("ins_Phones").value;
@@ -416,7 +572,7 @@
     });
     const msg = await result.json();
     alert(msg.message);
-    if (result.ok) loadTableData(table);
+    if (result.ok) loadTableData(table, currentDisplayName); 
   }
 
   async function createUpdateForm(table) {
@@ -439,7 +595,6 @@
         <input id="upd_${col.Field}" placeholder="New value for ${col.Field}" />`;
     });
 
-    // Extra phone field for merged tables
     if (table === "customer" || table === "employee") {
       formHtml += `
         <label>Phone Numbers</label>
@@ -473,7 +628,6 @@
       }
     });
 
-    // Handle phone update
     let phones = null;
     if (table === "customer" || table === "employee") {
       phones = document.getElementById("upd_Phones").value;
@@ -493,7 +647,7 @@
 
     const msg = await result.json();
     alert(msg.message);
-    if (result.ok) loadTableData(table);
+    if (result.ok) loadTableData(table, currentDisplayName);
   }
 
   async function createDeleteForm(table) {
@@ -528,12 +682,15 @@
     });
     const msg = await result.json();
     alert(msg.message);
-    if (result.ok) loadTableData(table);
+    if (result.ok) loadTableData(table, currentDisplayName);
   }
 
   function resetView() {
     document.querySelector('.content').classList.remove('data-active');
+    // ✅ NEW: Show CRUD buttons when returning home
+    document.getElementById('crud-action-menu').style.display = 'flex';
     currentTable = null;
+    currentDisplayName = null;
   }
 
   document.getElementById('home-button').addEventListener('click', resetView);
@@ -542,7 +699,71 @@
   document.getElementById('btn-update').addEventListener('click', () => showPanel('updateForm'));
   document.getElementById('btn-delete').addEventListener('click', () => showPanel('deleteForm'));
 
+  // NEW: Event listeners for sidebar
+  summaryToggleBtn.addEventListener('click', () => {
+    // Toggle sidebar
+    if (sidebar.classList.contains('open')) {
+      closeSidebar();
+    } else {
+      openSidebar();
+    }
+  });
+  closeBtn.addEventListener('click', closeSidebar);
+  overlay.addEventListener('click', closeSidebar);
+
   loadTables();
+
+  // UPDATED: This function now formats the title correctly
+  async function runQuery(type) {
+  try {
+    // ✅ NEW: Hide the CRUD buttons when a query is run
+    document.getElementById('crud-action-menu').style.display = 'none';
+
+    // Force the slider to the data view
+    document.querySelector('.content').classList.add('data-active');
+    
+    // UPDATED: Set the main title to the query name
+    // 'topCustomers' -> 'top Customers'
+    const queryTitle = type.replace(/([A-Z])/g, ' $1'); 
+    // 'top Customers' -> 'Top Customers'
+    const finalTitle = queryTitle.toLowerCase().split(' ').map(s => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');
+    document.getElementById("selectedTableTitle").textContent = finalTitle; // Sets title to "Top Customers"
+
+    const res = await fetch(`/api/query/${type}`);
+    if (!res.ok) throw new Error(`Server error: ${res.status}`);
+    const data = await res.json();
+
+    const container = document.getElementById("tableData");
+    if (!data.length) {
+      container.innerHTML = `<p style='text-align:center;'>No results found for query: ${type}</p>`;
+      showPanel('tableData');
+      return;
+    }
+
+    // REMOVED: The old <h4> tag, since we now use the main title
+    let html = "<table><thead><tr>";
+    Object.keys(data[0]).forEach(col => html += `<th>${col}</th>`);
+    html += "</tr></thead><tbody>";
+    data.forEach(row => {
+      html += "<tr>";
+      Object.values(row).forEach(v => html += `<td>${v ?? 'NULL'}</td>`);
+      html += "</tr>";
+    });
+    html += "</tbody></table>";
+    container.innerHTML = html;
+    
+    // This makes the table visible and activates the "VIEW" button
+    showPanel('tableData'); 
+    
+    // This closes the sidebar
+    closeSidebar(); 
+  } catch (err) {
+    console.error("Error running query:", err);
+    alert("Failed to execute query. Check console for details.");
+  }
+}
+
 </script>
+
 </body>
 </html>
