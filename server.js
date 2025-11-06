@@ -108,9 +108,7 @@ app.get("/api/columns/:table", (req, res) => {
  });
 });
 
-// ==========================================================
-// ✅ START OF FIXED INSERT ROUTE
-// ==========================================================
+
 app.post("/api/insert", (req, res) => {
  const { table, data, phones } = req.body;
  if (!table || !data) return res.status(400).json({ message: "Missing parameters" });
@@ -168,14 +166,7 @@ app.post("/api/insert", (req, res) => {
   });
  }
 });
-// ==========================================================
-// ✅ END OF FIXED INSERT ROUTE
-// ==========================================================
 
-
-// ==========================================================
-// ✅ START OF RE-WRITTEN UPDATE ROUTE
-// ==========================================================
 app.put("/api/update", (req, res) => {
  const { table, idColumn, idValue, data, phones } = req.body;
 
@@ -244,10 +235,6 @@ app.put("/api/update", (req, res) => {
    res.status(500).json({ message: "Update failed: " + err.message });
   });
 });
-// ==========================================================
-// ✅ END OF RE-WRITTEN UPDATE ROUTE
-// ==========================================================
-
 
 // DELETE record
 app.delete("/api/delete", (req, res) => {

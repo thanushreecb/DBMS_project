@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Department Store Dashboard</title>
   <style>
-    /* --- Global Styles --- */
     html {
       box-sizing: border-box;
     }
@@ -14,39 +13,35 @@
     body {
       margin: 0; 
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
-      background: #f4f7f6; /* Lighter, cleaner background */
+      background: #f4f7f6; 
       line-height: 1.6;
       color: #333;
     }
     
-    /* --- Focus Ring Style --- */
     :focus-visible {
       outline: 3px solid #0d6efd;
       outline-offset: 2px;
-      border-radius: 4px; /* Match element's radius */
+      border-radius: 4px;
     }
     .navbar:focus-visible, .form-container:focus-visible {
-      outline: none; /* Disable on non-interactive elements */
+      outline: none;
     }
 
-
-    /* --- Navbar Styles --- */
     .navbar {
-      /* New Gradient Header */
       background: linear-gradient(90deg, #0d6efd 0%, #0056b3 100%);
       color: white;
-      padding: 20px 25px; /* More padding */
+      padding: 20px 25px;
       display: flex;
       flex-direction: column; 
       align-items: center; 
       box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      position: relative; /* Needed for hamburger button */
+      position: relative; 
     }
     .navbar h2 {
       margin: 0; 
       margin-bottom: 18px; 
       font-size: 2.1em;
-      font-weight: 600; /* Bolder */
+      font-weight: 600;
       cursor: pointer; 
     }
     
@@ -58,21 +53,20 @@
     }
 
     .navbar button {
-      background: rgba(255, 255, 255, 0.1); /* Translucent */
+      background: rgba(255, 255, 255, 0.1);
       color: white; 
       border: 1px solid rgba(255, 255, 255, 0.3);
       padding: 8px 14px; 
       border-radius: 6px; 
       cursor: pointer; 
-      font-weight: 500; /* Medium weight */
+      font-weight: 500; 
       transition: all 0.2s ease;
     }
     .navbar button:hover { 
-      background: rgba(255, 255, 255, 0.2); /* Brighter on hover */
+      background: rgba(255, 255, 255, 0.2);
       border-color: rgba(255, 255, 255, 0.5);
     }
 
-    /* --- Slider Styles --- */
     .content { 
       padding: 30px 0;
       position: relative;
@@ -100,14 +94,13 @@
       transform: translateX(-50%); 
     }
     
-    /* --- New Data View Card --- */
     .data-view {
       background: #ffffff;
       border-radius: 12px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.06);
-      padding: 25px 35px; /* Internal padding */
-      margin: 0 30px; /* External margin */
-      width: calc(50% - 60px); /* Adjust width for margin */
+      padding: 25px 35px; 
+      margin: 0 30px;
+      width: calc(50% - 60px);
     }
 
     #selectedTableTitle {
@@ -117,7 +110,6 @@
       color: #333;
     }
 
-    /* --- Table Styles --- */
     table {
       border-collapse: collapse; width: 100%; margin-top: 20px; background: white;
       box-shadow: 0 4px 12px rgba(0,0,0,0.05); 
@@ -125,25 +117,24 @@
       overflow: hidden; 
     }
     th, td {
-      border: 1px solid #e9ecef; /* Lighter border */
+      border: 1px solid #e9ecef;
       padding: 12px 15px; 
       text-align: left; 
     }
     th { 
-      background-color: #f8f9fa; /* Light gray header */
-      color: #343a40; /* Darker text */
+      background-color: #f8f9fa;
+      color: #343a40;
       font-weight: 600;
       text-align: left;
-      border-bottom: 2px solid #dee2e6; /* Bolder bottom border */
+      border-bottom: 2px solid #dee2e6;
     }
     tbody tr:nth-child(even) {
       background-color: #fcfcfc;
     }
     tbody tr:hover {
-      background-color: #f1f7ff; /* Blue-ish tint on hover */
+      background-color: #f1f7ff;
     }
 
-    /* --- Action Menu Styles --- */
     .action-menu {
       display: flex;
       justify-content: center;
@@ -151,20 +142,20 @@
       margin: 25px 0 30px 0; 
     }
     .action-btn {
-      background: #ffffff; /* White background */
-      color: #495057; /* Dark gray text */
-      border: 1px solid #ced4da; /* Gray border */
-      padding: 10px 20px; /* Adjusted padding */
+      background: #ffffff;
+      color: #495057;
+      border: 1px solid #ced4da;
+      padding: 10px 20px;
       border-radius: 8px; 
       cursor: pointer;
-      font-weight: 600; /* Bolder */
+      font-weight: 600;
       font-size: 0.9em;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       transition: all 0.2s ease;
     }
     .action-btn:hover {
-      background: #f8f9fa; /* Light gray on hover */
+      background: #f8f9fa;
       border-color: #adb5bd;
       transform: translateY(-2px); 
       box-shadow: 0 4px 8px rgba(0,0,0,0.05);
@@ -177,13 +168,12 @@
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     
-    /* --- Form Styles --- */
     .form-container {
       margin: 30px auto; 
-      background: #fdfdfd; /* Slightly off-white */
+      background: #fdfdfd;
       padding: 30px; 
       border-radius: 8px; 
-      border: 1px solid #e9ecef; /* Light border */
+      border: 1px solid #e9ecef;
       max-width: 450px; 
     }
     .form-container h4 {
@@ -204,17 +194,15 @@
       border: 1px solid #ccc; 
       border-radius: 6px;
       font-size: 1em; 
-      background: #ffffff; /* Pure white */
+      background: #ffffff;
       transition: all 0.2s ease;
     }
     .form-container input:focus, .form-container select:focus {
       background: #fff;
       border-color: #007bff;
-      /* Using :focus-visible for outline */
       outline: none;
     }
 
-    /* --- Color-Coded Action Buttons --- */
     .action {
       border: none;
       padding: 12px 15px;
@@ -233,28 +221,24 @@
       box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
     
-    /* Insert = Green */
     .action.action-insert { background: #198754; }
     .action.action-insert:hover { background: #157347; }
     
-    /* Update = Blue */
     .action.action-update { background: #0d6efd; }
     .action.action-update:hover { background: #0b5ed7; }
 
-    /* Delete = Red */
     .action.action-delete { background: #dc3545; }
     .action.action-delete:hover { background: #b02a37; }
 
-    /* --- NEW SIDEBAR STYLES --- */
     .hamburger-btn {
       position: absolute;
-      top: 28px; /* Adjusted position */
+      top: 28px;
       left: 25px;
       background: none;
       border: none;
       cursor: pointer;
       padding: 10px;
-      z-index: 1002; /* Above sidebar */
+      z-index: 1002;
       display: flex;
       flex-direction: column;
       gap: 5px;
@@ -263,12 +247,12 @@
       display: block;
       width: 25px;
       height: 3px;
-      background: #a0c7ff; /* Light blue, stands out on gradient */
+      background: #a0c7ff;
       border-radius: 3px;
       transition: all 0.3s ease;
     }
     .hamburger-btn:hover span {
-      background: #d0e3ff; /* Brighter blue on hover */
+      background: #d0e3ff;
     }
     .sidebar.open ~ .hamburger-btn span:nth-child(1) {
       transform: translateY(8px) rotate(45deg);
@@ -299,25 +283,25 @@
     .sidebar {
       position: fixed;
       top: 0;
-      left: -300px; /* Start off-screen */
+      left: -300px;
       width: 280px;
       height: 100%;
-      background: #0d1b2a; /* Dark Blue Theme */
+      background: #0d1b2a;
       box-shadow: 4px 0 12px rgba(0,0,0,0.2);
       z-index: 1001;
       transition: left 0.3s ease-in-out;
       padding: 20px;
-      color: #e8eaed; /* Light text */
+      color: #e8eaed;
     }
     .sidebar.open {
       left: 0;
     }
     .sidebar h4 {
-      margin-top: 50px; /* Space for close button/hamburger */
+      margin-top: 50px;
       margin-bottom: 25px;
       font-size: 1.2em;
       font-weight: 500;
-      border-bottom: 1px solid #415a77; /* Border for blue */
+      border-bottom: 1px solid #415a77;
       padding-bottom: 10px;
     }
     .close-btn {
@@ -336,7 +320,7 @@
       gap: 10px;
     }
     .sidebar-btn {
-      background: #1b263b; /* Button for blue */
+      background: #1b263b;
       color: #e8eaed;
       border: none;
       padding: 12px 15px;
@@ -348,12 +332,9 @@
       transition: background 0.2s ease;
     }
     .sidebar-btn:hover {
-      background: #415a77; /* Hover for blue */
+      background: #415a77;
     }
-    /* --- END SIDEBAR STYLES --- */
 
-
-    /* --- Responsive Styles --- */
     @media (max-width: 768px) {
       .hamburger-btn {
         top: 20px;
@@ -363,7 +344,7 @@
         width: 200%;
       }
       .data-view {
-        width: calc(50% - 40px); /* Adjust for smaller screens */
+        width: calc(50% - 40px);
         padding: 20px;
         margin: 0 20px;
       }
@@ -371,10 +352,10 @@
         padding: 0 20px;
       }
       .action-menu {
-        flex-wrap: wrap; /* Wrap buttons */
+        flex-wrap: wrap;
       }
       .action-btn {
-        flex-grow: 1; /* Allow buttons to grow */
+        flex-grow: 1;
       }
       th, td {
         padding: 8px;
@@ -431,19 +412,16 @@
   </div>
 
 <script>
-  // UPDATED: More specific selector for main buttons
   const dataPanels = document.querySelectorAll('.data-panel');
   const actionButtons = document.querySelectorAll('#btn-view, #btn-insert, #btn-update, #btn-delete');
   let currentTable = null;
-  let currentDisplayName = null; // Store display name
+  let currentDisplayName = null;
 
-  // NEW: Sidebar elements
   const summaryToggleBtn = document.getElementById('summaryToggleBtn');
   const sidebar = document.getElementById('summarySidebar');
   const overlay = document.getElementById('overlay');
   const closeBtn = document.getElementById('closeSidebarBtn');
 
-  // NEW: Functions to open/close sidebar
   function openSidebar() {
     sidebar.classList.add('open');
     overlay.classList.add('open');
@@ -493,13 +471,12 @@
   }
 
   async function loadTableData(table, displayName) {
-    // ✅ NEW: Show the CRUD buttons when a table is loaded
     document.getElementById('crud-action-menu').style.display = 'flex';
 
     document.querySelector('.content').classList.add('data-active');
     document.getElementById("selectedTableTitle").textContent = `${displayName} Table`;
     currentTable = table;
-    currentDisplayName = displayName; // Store display name
+    currentDisplayName = displayName; 
 
     const res = await fetch(`/api/data/${table}`);
     const data = await res.json();
@@ -687,7 +664,6 @@
 
   function resetView() {
     document.querySelector('.content').classList.remove('data-active');
-    // ✅ NEW: Show CRUD buttons when returning home
     document.getElementById('crud-action-menu').style.display = 'flex';
     currentTable = null;
     currentDisplayName = null;
@@ -699,9 +675,7 @@
   document.getElementById('btn-update').addEventListener('click', () => showPanel('updateForm'));
   document.getElementById('btn-delete').addEventListener('click', () => showPanel('deleteForm'));
 
-  // NEW: Event listeners for sidebar
   summaryToggleBtn.addEventListener('click', () => {
-    // Toggle sidebar
     if (sidebar.classList.contains('open')) {
       closeSidebar();
     } else {
@@ -713,21 +687,15 @@
 
   loadTables();
 
-  // UPDATED: This function now formats the title correctly
   async function runQuery(type) {
   try {
-    // ✅ NEW: Hide the CRUD buttons when a query is run
     document.getElementById('crud-action-menu').style.display = 'none';
 
-    // Force the slider to the data view
     document.querySelector('.content').classList.add('data-active');
     
-    // UPDATED: Set the main title to the query name
-    // 'topCustomers' -> 'top Customers'
     const queryTitle = type.replace(/([A-Z])/g, ' $1'); 
-    // 'top Customers' -> 'Top Customers'
     const finalTitle = queryTitle.toLowerCase().split(' ').map(s => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');
-    document.getElementById("selectedTableTitle").textContent = finalTitle; // Sets title to "Top Customers"
+    document.getElementById("selectedTableTitle").textContent = finalTitle;
 
     const res = await fetch(`/api/query/${type}`);
     if (!res.ok) throw new Error(`Server error: ${res.status}`);
@@ -740,7 +708,6 @@
       return;
     }
 
-    // REMOVED: The old <h4> tag, since we now use the main title
     let html = "<table><thead><tr>";
     Object.keys(data[0]).forEach(col => html += `<th>${col}</th>`);
     html += "</tr></thead><tbody>";
@@ -752,10 +719,8 @@
     html += "</tbody></table>";
     container.innerHTML = html;
     
-    // This makes the table visible and activates the "VIEW" button
     showPanel('tableData'); 
     
-    // This closes the sidebar
     closeSidebar(); 
   } catch (err) {
     console.error("Error running query:", err);
@@ -764,6 +729,5 @@
 }
 
 </script>
-
 </body>
 </html>
