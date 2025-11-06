@@ -329,6 +329,23 @@ app.get("/api/query/transactionSummary", (req, res) => {
  });
 });
 
+// 4️. Stored Procedure — Customer total spend by ID
+app.get("/api/procedure/custTotal/:id", (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (Number.isNaN(id)) return res.status(400).json({ message: "Invalid customer id" });
+
+  // MySQL procedures return an array of result sets; rows are at [0]
+  db.query("CALL cust_total(?)", [id], (err, results) => {
+    if (err) {
+      console.error("Procedure error:", err);
+      return res.status(500).json({ message: err.sqlMessage || "Procedure failed" });
+    }
+    const rows = results?.[0] ?? [];
+    if (!rows.length) return res.status(404).json({ message: "Customer not found or no data" });
+    res.json(rows[0]); // { customer_id, customer_name, txn_count, total_amount, ... }
+  });
+});
+
 app.listen(process.env.PORT, () => {
  console.log(`Server running on http://localhost:${process.env.PORT}`);
 });
