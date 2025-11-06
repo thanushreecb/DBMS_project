@@ -12,8 +12,6 @@ A DBMS project built using **Node.js**, **Express**, and **MySQL**, providing a 
 
 ---
 
----
-
 ## Database
 Main tables:
 - customer  
