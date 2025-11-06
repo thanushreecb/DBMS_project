@@ -37,7 +37,9 @@ Insert, update, and delete operations reflect in both related tables.
   - **Nested Query:** Customers spending above average  
   - **Join Query:** Employees with department names  
   - **Aggregate Query:** Transaction summary (count, total, average)
-
+- Stored routines:
+  - **Trigger – `Stock_Update`**: Automatically decreases `Product.Stock_quantity` after each insert into `Purchases`.
+  - **Procedure – `cust_total`**: Returns a customer’s total spend, transaction count, etc. 
 ---
 
 ## How to Run
