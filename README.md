@@ -1,29 +1,48 @@
-# 🛒 Supermarket Management System
+# Department Store Management System
 
-A simple full-stack web app for managing supermarket data — including customers, employees, products, transactions, and reviews.  
-Supports viewing, inserting, updating, deleting, and running aggregate queries on a MySQL database.
-
----
-
-## 🚀 Features
-- View all tables (`customer`, `employee`, `product`, etc.)
-- Insert, update, and delete records  
-- Auto-handling of multi-valued attributes (like `customerphone`, `employeephone`)  
-- Aggregate queries with summary display  
-- Clean and modular Node.js + Express backend  
+## Overview
+A DBMS project built using **Node.js**, **Express**, and **MySQL**, providing a web interface for managing customers, employees, transactions, and loyalty programs. CRUD operations, triggers, and SQL queries (join, nested, aggregate) are integrated.
 
 ---
 
-## 🧩 Tech Stack
-- **Frontend:** HTML, CSS, JavaScript (vanilla)
-- **Backend:** Node.js with Express
+## Tech Stack
+- **Frontend:** HTML, CSS, JavaScript (Fetch API)
+- **Backend:** Node.js, Express, MySQL2
 - **Database:** MySQL
 
 ---
 
-## ⚙️ Setup Instructions
 
-### 1️⃣ Clone and open project
-```bash
-git clone <repo-url>
-cd supermarket-system
+---
+
+## Database
+Main tables:
+- customer  
+- customerphone  
+- employee  
+- employeephone
+- department
+- transactiontable
+- product
+- purchases
+- loyaltyprogram  
+- reviews
+
+Customer & employee tables are **merged** with their phone tables using `LEFT JOIN`.  
+Insert, update, and delete operations reflect in both related tables.
+
+---
+
+## Features
+- View all tables (except phone tables separately)
+- CRUD operations through GUI
+- Predefined SQL query buttons:
+  - **Nested Query:** Customers spending above average  
+  - **Join Query:** Employees with department names  
+  - **Aggregate Query:** Transaction summary (count, total, average)
+
+---
+
+## How to Run
+1. Create a MySQL database and import your `.sql` schema.
+2. Set credentials in `.env`:
